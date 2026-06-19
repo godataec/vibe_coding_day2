@@ -13,6 +13,7 @@ const lastUpdatedDisplay = document.getElementById('last-updated-display');
 const statusSection = document.getElementById('status-section');
 const statusMessage = document.getElementById('status-message');
 const exportCsvBtn = document.getElementById('export-csv-btn');
+const themeToggleBtn = document.getElementById('theme-toggle-btn');
 
 // Modal Elements
 const tweetModal = document.getElementById('tweet-modal');
@@ -26,6 +27,7 @@ const tweetUrlDisplay = document.getElementById('tweet-url-display');
 
 // Page Load Initializer
 document.addEventListener('DOMContentLoaded', () => {
+    initializeTheme();
     fetchReleaseNotes(false);
     setupEventListeners();
 });
@@ -36,6 +38,9 @@ function setupEventListeners() {
     refreshBtn.addEventListener('click', () => {
         fetchReleaseNotes(true);
     });
+
+    // Theme toggle action
+    themeToggleBtn.addEventListener('click', toggleTheme);
 
     // Export CSV action
     exportCsvBtn.addEventListener('click', () => {
@@ -397,4 +402,31 @@ function exportToCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+// Theme management helpers
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeUI(savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeUI(newTheme);
+}
+
+function updateThemeUI(theme) {
+    const sunIcon = themeToggleBtn.querySelector('.sun-icon');
+    const moonIcon = themeToggleBtn.querySelector('.moon-icon');
+    if (theme === 'light') {
+        sunIcon.classList.remove('hidden');
+        moonIcon.classList.add('hidden');
+    } else {
+        sunIcon.classList.add('hidden');
+        moonIcon.classList.remove('hidden');
+    }
 }
