@@ -2,6 +2,7 @@
 let allReleases = [];
 let activeFilter = 'all';
 let searchQuery = '';
+let processedItems = new Set(JSON.parse(localStorage.getItem('processed_items') || '[]'));
 
 // DOM Elements
 const feedContainer = document.getElementById('feed-container');
@@ -14,6 +15,9 @@ const statusSection = document.getElementById('status-section');
 const statusMessage = document.getElementById('status-message');
 const exportCsvBtn = document.getElementById('export-csv-btn');
 const themeToggleBtn = document.getElementById('theme-toggle-btn');
+const searchClearBtn = document.getElementById('search-clear-btn');
+const resultsCounter = document.getElementById('results-counter');
+const backToTopBtn = document.getElementById('back-to-top-btn');
 
 // Modal Elements
 const tweetModal = document.getElementById('tweet-modal');
@@ -47,10 +51,45 @@ function setupEventListeners() {
         exportToCSV();
     });
 
-    // Search action
+    // Search action & Clear search button toggle
     searchInput.addEventListener('input', (e) => {
         searchQuery = e.target.value.toLowerCase().trim();
+        if (searchQuery) {
+            searchClearBtn.classList.remove('hidden');
+        } else {
+            searchClearBtn.classList.add('hidden');
+        }
         renderFeed();
+    });
+
+    // Clear search keyword click
+    searchClearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchQuery = '';
+        searchClearBtn.classList.add('hidden');
+        renderFeed();
+        searchInput.focus();
+    });
+
+    // Back to top button action
+    backToTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Show/Hide back-to-top button on scroll
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            backToTopBtn.classList.remove('hidden');
+        } else {
+            backToTopBtn.classList.add('hidden');
+        }
+    });
+
+    // Modal Keyboard escape close
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !tweetModal.classList.contains('hidden')) {
+            closeTweetModal();
+        }
     });
 
     // Filtering category tags
@@ -123,15 +162,19 @@ async function fetchReleaseNotes(forceRefresh = false) {
 // Show/Hide Status Pane
 function showStatus(msg, isError = false) {
     statusSection.classList.remove('hidden');
-    statusMessage.textContent = msg;
     const spinner = statusSection.querySelector('.spinner-large');
     
     if (isError) {
         spinner.classList.add('hidden');
         statusMessage.style.color = '#ef4444';
+        statusMessage.innerHTML = `${escapeHTML(msg)}<br><div class="retry-link" id="retry-link">Try Again</div>`;
+        document.getElementById('retry-link').addEventListener('click', () => {
+            fetchReleaseNotes(true);
+        });
     } else {
         spinner.classList.remove('hidden');
         statusMessage.style.color = 'var(--text-secondary)';
+        statusMessage.textContent = msg;
     }
 }
 
@@ -143,6 +186,7 @@ function hideStatus() {
 function renderFeed() {
     feedContainer.innerHTML = '';
     let visibleCardsCount = 0;
+    let totalUpdatesCount = 0;
 
     allReleases.forEach((release, index) => {
         // Filter the individual updates inside this release date group
@@ -211,9 +255,15 @@ function renderFeed() {
         const body = document.createElement('div');
         body.className = 'card-body';
 
-        filteredUpdates.forEach(update => {
+        filteredUpdates.forEach((update, idx) => {
+            totalUpdatesCount++;
+            
+            // Build unique key
+            const itemUniqueId = release.title.replace(/\s+/g, '') + '-' + update.type + '-' + update.text.substring(0, 10).replace(/[^a-zA-Z0-9]/g, '');
+            const isProcessed = processedItems.has(itemUniqueId);
+
             const updateItem = document.createElement('div');
-            updateItem.className = 'update-item';
+            updateItem.className = `update-item ${isProcessed ? 'processed' : ''}`;
 
             const badgeClass = update.type.toLowerCase();
             
@@ -222,6 +272,11 @@ function renderFeed() {
                 <span class="type-badge ${escapeHTML(badgeClass)}">${escapeHTML(update.type)}</span>
                 <div class="update-details">${update.content_html}</div>
                 <div class="update-actions">
+                    <button class="read-toggle-btn ${isProcessed ? 'processed' : ''}" title="${isProcessed ? 'Mark as unread' : 'Mark as read'}">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
                     <button class="tweet-action-btn" title="Tweet this update">
                         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -229,6 +284,12 @@ function renderFeed() {
                     </button>
                 </div>
             `;
+
+            // Attach toggle processed event
+            const readBtn = updateItem.querySelector('.read-toggle-btn');
+            readBtn.addEventListener('click', () => {
+                toggleProcessedState(itemUniqueId, updateItem, readBtn);
+            });
 
             // Attach listener to individual Tweet Button
             const tweetBtn = updateItem.querySelector('.tweet-action-btn');
@@ -243,6 +304,9 @@ function renderFeed() {
         card.appendChild(body);
         feedContainer.appendChild(card);
     });
+
+    // Update matching indicators counter
+    resultsCounter.textContent = `Found ${totalUpdatesCount} matching update${totalUpdatesCount === 1 ? '' : 's'}`;
 
     // Empty State Check
     if (visibleCardsCount === 0) {
@@ -429,4 +493,20 @@ function updateThemeUI(theme) {
         sunIcon.classList.add('hidden');
         moonIcon.classList.remove('hidden');
     }
+}
+
+// Toggle read/unread processed state of release notes
+function toggleProcessedState(id, updateItem, button) {
+    if (processedItems.has(id)) {
+        processedItems.delete(id);
+        updateItem.classList.remove('processed');
+        button.classList.remove('processed');
+        button.title = "Mark as read";
+    } else {
+        processedItems.add(id);
+        updateItem.classList.add('processed');
+        button.classList.add('processed');
+        button.title = "Mark as unread";
+    }
+    localStorage.setItem('processed_items', JSON.stringify([...processedItems]));
 }

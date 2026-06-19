@@ -72,6 +72,12 @@
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
                 <input type="text" id="search-input" placeholder="Search updates by keyword (e.g. Gemini, partition, performance)..." aria-label="Search updates">
+                <button id="search-clear-btn" class="search-clear-btn hidden" aria-label="Clear search" title="Clear search text">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             
             <div class="filters-wrapper">
@@ -84,6 +90,7 @@
                     <button class="filter-tag" data-type="Changed" id="btn-filter-changed">Changed</button>
                     <button class="filter-tag" data-type="Deprecated" id="btn-filter-deprecated">Deprecated</button>
                 </div>
+                <div class="results-counter" id="results-counter">Found 0 updates</div>
             </div>
         </section>
 
@@ -163,6 +170,13 @@
             </div>
         </div>
     </div>
+
+    <!-- Floating Back to Top Button -->
+    <button id="back-to-top-btn" class="back-to-top-btn hidden" aria-label="Back to top" title="Scroll back to top">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
 
     <!-- Script Entry Point -->
     <script src="/static/script.js"></script>

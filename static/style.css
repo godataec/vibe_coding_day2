@@ -855,3 +855,110 @@ body {
         max-width: 100%;
     }
 }
+
+/* UX Utility Feature Improvements */
+.results-counter {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    transition: var(--transition-smooth);
+}
+
+.search-clear-btn:hover {
+    color: var(--accent-cyan);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.back-to-top-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-primary);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    z-index: 90;
+}
+
+.back-to-top-btn:hover {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(6, 182, 212, 0.3);
+}
+
+/* Processed / Read Opacity Styles */
+.update-item.processed {
+    opacity: 0.45;
+    filter: grayscale(40%);
+}
+
+.read-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-smooth);
+}
+
+.read-toggle-btn:hover {
+    color: var(--color-feature);
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.read-toggle-btn.processed {
+    color: var(--color-feature) !important;
+}
+
+/* Retry Connection styling */
+.retry-link {
+    margin-top: 8px;
+    color: var(--accent-cyan);
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+}
+
+.retry-link:hover {
+    color: var(--accent-blue);
+}
