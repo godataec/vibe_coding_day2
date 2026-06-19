@@ -12,6 +12,7 @@ const filterTagsContainer = document.getElementById('filter-tags-container');
 const lastUpdatedDisplay = document.getElementById('last-updated-display');
 const statusSection = document.getElementById('status-section');
 const statusMessage = document.getElementById('status-message');
+const exportCsvBtn = document.getElementById('export-csv-btn');
 
 // Modal Elements
 const tweetModal = document.getElementById('tweet-modal');
@@ -34,6 +35,11 @@ function setupEventListeners() {
     // Refresh action
     refreshBtn.addEventListener('click', () => {
         fetchReleaseNotes(true);
+    });
+
+    // Export CSV action
+    exportCsvBtn.addEventListener('click', () => {
+        exportToCSV();
     });
 
     // Search action
@@ -173,14 +179,28 @@ function renderFeed() {
                 </svg>
                 <h3 class="card-title">${escapeHTML(release.title)}</h3>
             </div>
-            <a href="${release.link}" target="_blank" class="card-meta-link" title="Open source Google Cloud documentation">
-                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                    <polyline points="15 3 21 3 21 9"></polyline>
-                    <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-            </a>
+            <div class="card-header-actions">
+                <button class="copy-card-btn" title="Copy card updates to clipboard">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                </button>
+                <a href="${release.link}" target="_blank" class="card-meta-link" title="Open source Google Cloud documentation">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+            </div>
         `;
+
+        // Wire up Copy to Clipboard action
+        const copyBtn = header.querySelector('.copy-card-btn');
+        copyBtn.addEventListener('click', () => {
+            copyCardToClipboard(release, filteredUpdates, copyBtn);
+        });
 
         // Card Body
         const body = document.createElement('div');
@@ -303,4 +323,78 @@ function escapeHTML(str) {
             '"': '&quot;'
         }[tag] || tag)
     );
+}
+
+// Copy single release card's updates to clipboard
+function copyCardToClipboard(release, updates, button) {
+    let text = `BigQuery Release Notes — ${release.title}\n`;
+    text += `URL: ${release.link}\n\n`;
+    
+    updates.forEach(update => {
+        text += `[${update.type.toUpperCase()}]\n${update.text}\n\n`;
+    });
+    
+    text = text.trim();
+    
+    navigator.clipboard.writeText(text).then(() => {
+        // Visual success checkmark transition
+        button.classList.add('copied');
+        const originalHTML = button.innerHTML;
+        button.innerHTML = `
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        `;
+        
+        setTimeout(() => {
+            button.classList.remove('copied');
+            button.innerHTML = originalHTML;
+        }, 1500);
+    }).catch(err => {
+        console.error('Failed to copy to clipboard: ', err);
+        alert('Failed to copy card updates to clipboard.');
+    });
+}
+
+// Export active/filtered release notes to CSV
+function exportToCSV() {
+    const escapeCSV = (text) => {
+        if (!text) return '""';
+        return `"${text.replace(/"/g, '""').trim()}"`;
+    };
+    
+    let rows = [];
+    rows.push(["Date", "Type", "Link", "Details"].map(escapeCSV).join(","));
+    
+    allReleases.forEach(release => {
+        const filteredUpdates = release.updates.filter(update => {
+            const matchesCategory = (activeFilter === 'all') || 
+                                    (update.type.toLowerCase() === activeFilter.toLowerCase());
+            const matchesSearch = !searchQuery || 
+                                  update.text.toLowerCase().includes(searchQuery) || 
+                                  update.type.toLowerCase().includes(searchQuery) ||
+                                  release.title.toLowerCase().includes(searchQuery);
+            return matchesCategory && matchesSearch;
+        });
+        
+        filteredUpdates.forEach(update => {
+            rows.push([release.title, update.type, release.link, update.text].map(escapeCSV).join(","));
+        });
+    });
+    
+    if (rows.length <= 1) {
+        alert("No release notes found matching current search/filters to export.");
+        return;
+    }
+    
+    const csvString = rows.join("\n");
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "bigquery_releases_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }

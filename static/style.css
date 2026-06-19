@@ -427,6 +427,33 @@ body {
     color: var(--accent-cyan);
 }
 
+.card-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.copy-card-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition-smooth);
+    padding: 2px;
+}
+
+.copy-card-btn:hover {
+    color: var(--accent-cyan);
+    transform: scale(1.1);
+}
+
+.copy-card-btn.copied {
+    color: var(--color-feature) !important;
+}
+
 /* Card Body Content */
 .card-body {
     padding: 24px;
